@@ -262,7 +262,7 @@ describe('Scoop - server.js: ', function() {
       expect(database.comments[1].body).to.not.equal('');
     });
 
-    it('routes[\'/articles/:id\'].PUT should return a 200 response after a succesful update', function() {
+    it('routes[\'/comments/:id\'].PUT should return a 200 response after a succesful update', function() {
       const updatedComment = {
         id: 1,
         body: 'Updated Body',
