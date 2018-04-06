@@ -29,7 +29,9 @@ const routes = {
   '/articles/:id/downvote': {
     'PUT': downvoteArticle
   },
-  '/comments': {},
+  '/comments': {
+    'POST': createComment
+  },
   '/comments/:id': {},
   '/comments/:id/upvote': {},
   '/comments/:id/downvote': {}
@@ -244,6 +246,42 @@ function downvote(item, username) {
     item.downvotedBy.push(username);
   }
   return item;
+}
+
+function createComment(url, request) {
+  const response = {};
+
+  if( ! request.body || ! request.body.comment ||
+      ! request.body.comment.body || ! request.body.comment.articleId ||
+      ! request.body.comment.username ) {
+    response.status = 400;
+    return response;
+  }
+
+  if( ! database.users[request.body.comment.username] ) {
+    response.status = 400;
+    return response;
+  }
+
+  if( ! database.articles[request.body.comment.articleId] ) {
+    response.status = 400;
+    return response;
+  }
+
+  const newComment = {
+    body: request.body.comment.body,
+    articleId: request.body.comment.articleId,
+    username: request.body.comment.username,
+    id: database.nextCommentId++,
+    upvotedBy: [],
+    downvotedBy: []
+  };
+  database.comments[newComment.id] = newComment;
+  database.users[newComment.username].commentIds.push(newComment.id);
+  database.articles[newComment.articleId].commentIds.push(newComment.id);
+  response.status = 201;
+  response.body = { comment: newComment };
+  return response;
 }
 
 // Write all code above this line.
