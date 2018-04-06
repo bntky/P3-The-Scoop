@@ -28,7 +28,11 @@ const routes = {
   },
   '/articles/:id/downvote': {
     'PUT': downvoteArticle
-  }
+  },
+  '/comments': {},
+  '/comments/:id': {},
+  '/comments/:id/upvote': {},
+  '/comments/:id/downvote': {}
 };
 
 function getUser(url, request) {
