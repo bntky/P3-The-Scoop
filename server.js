@@ -32,11 +32,13 @@ const routes = {
   '/comments': {
     'POST': createComment
   },
-  '/comments/:id/upvote': {},
   '/comments/:id/downvote': {}
   '/comments/:id': {
     'PUT': updateComment,
     'DELETE': deleteComment
+  },
+  '/comments/:id/upvote': {
+    'PUT': upvoteComment
   },
 };
 
@@ -324,6 +326,25 @@ function deleteComment(url, request) {
   database.articles[articleId].commentIds.splice(artComInd, 1);
   database.comments[commentId] = null;
   response.status = 204;
+  return response;
+}
+
+function upvoteComment(url, request) {
+  const commentId = Number(url.split('/').filter(segment => segment)[1]);
+  const comment = database.comments[commentId];
+  const username = request.body && request.body.username;
+  const response = {};
+
+  if( ! username || ! comment || ! database.users[username] ) {
+    response.status = 400;
+
+    return response;
+  }
+  
+  response.body = {
+    comment: upvote(comment, username)
+  };
+  response.status = 200;
   return response;
 }
 // Write all code above this line.
