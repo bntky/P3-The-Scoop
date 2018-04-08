@@ -32,9 +32,11 @@ const routes = {
   '/comments': {
     'POST': createComment
   },
-  '/comments/:id': {},
   '/comments/:id/upvote': {},
   '/comments/:id/downvote': {}
+  '/comments/:id': {
+    'PUT': updateComment,
+  },
 };
 
 function getUser(url, request) {
@@ -284,6 +286,25 @@ function createComment(url, request) {
   return response;
 }
 
+function updateComment(url, request) {
+  const commentId = Number(url.split('/').filter(segment => segment)[1]);
+  const response = {};
+
+  if( ! request.body || ! request.body.comment ||
+      ! request.body.comment.body ) {
+    response.status = 400;
+    return response;
+  }
+
+  if( ! database.comments[commentId] ) {
+    response.status = 404;
+    return response;
+  }
+
+  database.comments[commentId].body = request.body.comment.body;
+  response.status = 200;
+  return response;
+}
 // Write all code above this line.
 
 const http = require('http');
