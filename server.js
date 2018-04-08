@@ -36,6 +36,7 @@ const routes = {
   '/comments/:id/downvote': {}
   '/comments/:id': {
     'PUT': updateComment,
+    'DELETE': deleteComment
   },
 };
 
@@ -303,6 +304,26 @@ function updateComment(url, request) {
 
   database.comments[commentId].body = request.body.comment.body;
   response.status = 200;
+  return response;
+}
+
+function deleteComment(url, request) {
+  const commentId = Number(url.split('/').filter(segment => segment)[1]);
+  const response = {};
+
+  if( ! database.comments[commentId] ) {
+    response.status = 404;
+    return response;
+  }
+
+  const username = database.comments[commentId].username;
+  const articleId = database.comments[commentId].articleId;
+  const usrComInd = database.users[username].commentIds.indexOf(commentId);
+  const artComInd = database.articles[articleId].commentIds.indexOf(commentId);
+  database.users[username].commentIds.splice(usrComInd, 1);
+  database.articles[articleId].commentIds.splice(artComInd, 1);
+  database.comments[commentId] = null;
+  response.status = 204;
   return response;
 }
 // Write all code above this line.
