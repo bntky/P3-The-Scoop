@@ -32,7 +32,6 @@ const routes = {
   '/comments': {
     'POST': createComment
   },
-  '/comments/:id/downvote': {}
   '/comments/:id': {
     'PUT': updateComment,
     'DELETE': deleteComment
@@ -40,6 +39,9 @@ const routes = {
   '/comments/:id/upvote': {
     'PUT': upvoteComment
   },
+  '/comments/:id/downvote': {
+    'PUT': downvoteComment
+  }
 };
 
 function getUser(url, request) {
@@ -347,6 +349,26 @@ function upvoteComment(url, request) {
   response.status = 200;
   return response;
 }
+
+function downvoteComment(url, request) {
+  const commentId = Number(url.split('/').filter(segment => segment)[1]);
+  const comment = database.comments[commentId];
+  const username = request.body && request.body.username;
+  const response = {};
+
+  if( ! username || ! comment || ! database.users[username] ) {
+    response.status = 400;
+
+    return response;
+  }
+  
+  response.body = {
+    comment: downvote(comment, username)
+  };
+  response.status = 200;
+  return response;
+}
+
 // Write all code above this line.
 
 const http = require('http');
