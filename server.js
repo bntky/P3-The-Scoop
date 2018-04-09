@@ -37,10 +37,10 @@ const routes = {
     'DELETE': deleteComment
   },
   '/comments/:id/upvote': {
-    'PUT': upvoteComment
+    'PUT': voteOnComment
   },
   '/comments/:id/downvote': {
-    'PUT': downvoteComment
+    'PUT': voteOnComment
   }
 };
 
@@ -331,8 +331,10 @@ function deleteComment(url, request) {
   return response;
 }
 
-function upvoteComment(url, request) {
+function voteOnComment(url, request) {
   const commentId = Number(url.split('/').filter(segment => segment)[1]);
+  const upDown = url.split('/').filter(segment => segment)[2];
+  const vote = upDown === 'upvote' ? upvote : downvote;
   const comment = database.comments[commentId];
   const username = request.body && request.body.username;
   const response = {};
@@ -344,26 +346,7 @@ function upvoteComment(url, request) {
   }
   
   response.body = {
-    comment: upvote(comment, username)
-  };
-  response.status = 200;
-  return response;
-}
-
-function downvoteComment(url, request) {
-  const commentId = Number(url.split('/').filter(segment => segment)[1]);
-  const comment = database.comments[commentId];
-  const username = request.body && request.body.username;
-  const response = {};
-
-  if( ! username || ! comment || ! database.users[username] ) {
-    response.status = 400;
-
-    return response;
-  }
-  
-  response.body = {
-    comment: downvote(comment, username)
+    comment: vote(comment, username)
   };
   response.status = 200;
   return response;
