@@ -292,6 +292,7 @@ function createComment(url, request) {
 }
 
 function updateComment(url, request) {
+  // Find the comment ID in the URL
   const commentId = Number(url.split('/').filter(segment => segment)[1]);
   const response = {};
 
@@ -312,6 +313,7 @@ function updateComment(url, request) {
 }
 
 function deleteComment(url, request) {
+  // Find the comment ID in the URL
   const commentId = Number(url.split('/').filter(segment => segment)[1]);
   const response = {};
 
@@ -322,19 +324,32 @@ function deleteComment(url, request) {
 
   const username = database.comments[commentId].username;
   const articleId = database.comments[commentId].articleId;
+
+  // Find index into users and articles for this comment 
   const usrComInd = database.users[username].commentIds.indexOf(commentId);
   const artComInd = database.articles[articleId].commentIds.indexOf(commentId);
+
+  // Remove this comment from the user and articles
   database.users[username].commentIds.splice(usrComInd, 1);
   database.articles[articleId].commentIds.splice(artComInd, 1);
+
+  // Remove the comment from the comments
   database.comments[commentId] = null;
   response.status = 204;
   return response;
 }
 
+// Up vote or down vote a comment based on the URL
 function voteOnComment(url, request) {
+  // Find the comment ID in the URL
   const commentId = Number(url.split('/').filter(segment => segment)[1]);
+
+  // Determine if this is a up vote or down vote from the URL
   const upDown = url.split('/').filter(segment => segment)[2];
+
+  // Set the vote function based on if this is an up vote or a down vote
   const vote = upDown === 'upvote' ? upvote : downvote;
+  
   const comment = database.comments[commentId];
   const username = request.body && request.body.username;
   const response = {};
