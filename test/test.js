@@ -4,14 +4,21 @@ process.env.IS_TEST_MODE = true;
 const rewire = require('rewire');
 const serverModule = rewire('../server.js');
 const expect = require('chai').expect;
+const fs = require('fs');
 
 describe('Scoop - server.js: ', function() {
   let database, routes, originalDatabase, originalNextArticleId,
-      originalCommentId;
+      originalCommentId, loadDatabase, saveDatabase;
 
   before(function() {
     database = serverModule.__get__('database');
     routes = serverModule.__get__('routes');
+    try {
+      loadDatabase = serverModule.__get__('loadDatabase', null);
+    } catch(e) {};
+    try {
+      saveDatabase = serverModule.__get__('saveDatabase', null);
+    } catch(e) {};
 
     originalDatabase = JSON.parse(JSON.stringify(database));
   });
@@ -555,4 +562,179 @@ describe('Scoop - server.js: ', function() {
 
   });
 
+  describe('BONUS: YAML Loading the Database', () => {
+
+    beforeEach(function() {
+      const dbstr =
+        `users:
+  user:
+    username: user
+    articleIds:
+      - 1
+    commentIds:
+      - 1
+      - 2
+articles:
+  '1':
+    id: 1
+    title: Title
+    url: 'http://url.com'
+    username: user
+    commentIds:
+      - 1
+      - 2
+nextArticleId: 2
+comments:
+  '1':
+    id: 1
+    body: Body
+    username: user
+    articleId: 1
+  '2':
+    id: 2
+    body: Body
+    username: user2
+    articleId: 1
+nextCommentId: 3
+`;
+      process.env.YAMLARTICLEDB = 'test-database.yaml';
+      fs.writeFileSync(process.env.YAMLARTICLEDB, dbstr, 'utf8');
+    });
+
+    it('should have a function called loadDatabase', () => {
+      expect(loadDatabase).to.exist;
+    });
+
+    it('should return an object with a users key', () => {
+      const expectedDatabase = loadDatabase();
+
+      expect(expectedDatabase).to.include.keys('users');
+    });
+
+    it('should return an object with a articles key', () => {
+      const expectedDatabase = loadDatabase();
+
+      expect(expectedDatabase).to.include.keys('articles');
+    });
+
+    it('should return an object with a nextArticleId key', () => {
+      const expectedDatabase = loadDatabase();
+
+      expect(expectedDatabase).to.include.keys('nextArticleId');
+    });
+
+    it('should return an object with a comments key', () => {
+      const expectedDatabase = loadDatabase();
+
+      expect(expectedDatabase).to.include.keys('comments');
+    });
+
+    it('should return an object with a nextCommentId key', () => {
+      const expectedDatabase = loadDatabase();
+
+      expect(expectedDatabase).to.include.keys('nextCommentId');
+    });
+
+    it('returned database nextArticleId should be an integer', () => {
+      const expectedDatabase = loadDatabase();
+      const expectedNextArticleId = expectedDatabase.nextArticleId;
+
+      expect(typeof(expectedNextArticleId)).to.equal('number');
+      expect(expectedNextArticleId).to.equal(Math.floor(expectedNextArticleId));
+      expect(expectedNextArticleId).to.be.above(0);
+    });
+
+    it('returned database nextCommentId should be an integer', () => {
+      const expectedDatabase = loadDatabase();
+      const expectedNextCommentId = expectedDatabase.nextCommentId;
+
+      expect(typeof(expectedNextCommentId)).to.equal('number');
+      expect(expectedNextCommentId).to.equal(Math.floor(expectedNextCommentId));
+      expect(expectedNextCommentId).to.be.above(0);
+    });
+  });
+
+  describe('BONUS: YAML Saving the Database', () => {
+
+    beforeEach(function() {
+      database.users['user'] = {
+        username: 'user',
+        articleIds: [1],
+        commentIds: [1, 2]
+      };
+      database.articles[1] = {
+        id: 1,
+        title: 'Title',
+        url: 'http://url.com',
+        username: 'user',
+        commentIds: [1, 2]
+      };
+      database.nextArticleId = 2;
+      database.comments[1] = {
+        id: 1,
+        body: 'Body',
+        username: 'user',
+        articleId: 1
+      };
+      database.comments[2] = {
+        id: 2,
+        body: 'Body',
+        username: 'user2',
+        articleId: 1
+      };
+      database.nextCommentId = 3;
+
+      process.env.YAMLARTICLEDB = 'test-database.yaml';
+      try {
+        fs.unlinkSync(process.env.YAMLARTICLEDB);
+      } catch(e) {};
+    });
+
+    it('should have a function called saveDatabase', () => {
+      expect(saveDatabase).to.exist;
+    });
+
+    it('should create a new database file', () => {
+      saveDatabase();
+
+      const dbfilestat = fs.statSync(process.env.YAMLARTICLEDB);
+      expect(dbfilestat.isFile()).to.be.true;
+    });
+
+    it('should create a file that has a line with `users` in it', () => {
+      saveDatabase();
+
+      const expectedDBString = fs.readFileSync(process.env.YAMLARTICLEDB).toString();
+
+      expect(expectedDBString).to.include('users:\n');
+    });
+    it('should create a file that has a line with `articles` in it', () => {
+      saveDatabase();
+
+      const expectedDBString = fs.readFileSync(process.env.YAMLARTICLEDB).toString();
+
+      expect(expectedDBString).to.include('articles:\n');
+    });
+    it('should create a file that has a line with `comments` in it', () => {
+      saveDatabase();
+
+      const expectedDBString = fs.readFileSync(process.env.YAMLARTICLEDB).toString();
+
+      expect(expectedDBString).to.include('comments:\n');
+    });
+    it('should create a file that has a line with `nextArticleId` in it', () => {
+      saveDatabase();
+
+      const expectedDBString = fs.readFileSync(process.env.YAMLARTICLEDB).toString();
+
+      expect(expectedDBString).to.include('nextArticleId: ');
+    });
+    it('should create a file that has a line with `nextCommentId` in it', () => {
+      saveDatabase();
+
+      const expectedDBString = fs.readFileSync(process.env.YAMLARTICLEDB).toString();
+
+      expect(expectedDBString).to.include('nextCommentId: ');
+    });
+  });
 });
