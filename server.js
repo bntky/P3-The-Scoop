@@ -1,3 +1,6 @@
+const fs = require('fs');
+const yaml = require('js-yaml');
+
 // database is let instead of const to allow us to modify it in test.js
 let database = {
   users: {},
@@ -365,6 +368,27 @@ function voteOnComment(url, request) {
   };
   response.status = 200;
   return response;
+}
+
+function loadDatabase() {
+  const dbfile = process.env.YAMLARTICLEDB || 'database.yaml';
+
+  try {
+    return yaml.safeLoad(fs.readFileSync(dbfile));
+  } catch(e) {
+    console.log('Using empty database');
+  };
+}
+
+function saveDatabase() {
+  const dbfile = process.env.YAMLARTICLEDB || 'database.yaml';
+  const dbstr = yaml.safeDump(database);
+
+  try {
+    fs.writeFileSync(dbfile, dbstr, 'utf8');
+  } catch(e) {
+    console.log(`Failed to save database: ${e}`);
+  }
 }
 
 // Write all code above this line.
